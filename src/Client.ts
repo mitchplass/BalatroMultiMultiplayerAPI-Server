@@ -49,7 +49,10 @@ class Client {
 		this.location = location
 		if (this.lobby) {
 			if (this.lobby.host === this) {
-				this.lobby.guest?.sendAction({ action: "enemyLocation", location: this.location })
+				// we're going to need to rethink how this works
+				this.lobby.guests.forEach((guest) => {
+					guest.sendAction({ action: "enemyLocation", location: this.location })
+				})
 			} else {
 				this.lobby.host?.sendAction({ action: "enemyLocation", location: this.location })
 			}
@@ -79,15 +82,30 @@ class Client {
 			this.lives -= 1
 			this.livesBlocker = true
 			this.sendAction({ action: "playerInfo", lives: this.lives });
-			if (this.lobby && this.lobby.host && this.lobby.guest) {
-				const enemy = this.lobby.host === this ? this.lobby.guest : this.lobby.host
-				enemy.sendAction({
-					action: "enemyInfo",
-					handsLeft: this.handsLeft,
-					score: this.score.toString(),
-					skips: this.skips,
-					lives: this.lives,
-				});
+			if (this.lobby && this.lobby.host && this.lobby.guests) {
+				const enemy = this.lobby.host === this ? this.lobby.guests : this.lobby.host
+
+				// this will also need changing
+				if (Array.isArray(enemy)) {
+					enemy.forEach((enemy) => {
+						enemy.sendAction({
+							action: "enemyInfo",
+							handsLeft: this.handsLeft,
+							score: this.score.toString(),
+							skips: this.skips,
+							lives: this.lives,
+						});
+					});
+				}
+				else {
+					enemy.sendAction({
+						action: "enemyInfo",
+						handsLeft: this.handsLeft,
+						score: this.score.toString(),
+						skips: this.skips,
+						lives: this.lives,
+					});
+				}
 			}
 		}
 	}
